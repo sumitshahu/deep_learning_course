@@ -100,3 +100,53 @@ class MLP(object):
     def sigmoid(self,x):
           y=1/(1+np.exp(-x))
           return y
+
+    def gradient_descent(self,learning_rate):
+      for i in range(len(self.weights)):
+        weight=self.weights[i]
+        derivative=self.derivatives[i]
+        self.weights[i]+=derivative*learning_rate
+
+
+    def train(self,inputs,targets,epoch,learning_rate):
+      for i in range(epoch):
+        sum_error=0
+        # iterate through all the training data
+        for j, input in enumerate(inputs):
+            target = targets[j]
+
+            # activate the network!
+            output = self.forward_propogate(input)
+
+            error = target - output
+
+            self.back_backpropogate(error)
+
+            # now perform gradient descent on the derivatives
+            # (this will update the weights
+            self.gradient_descent(learning_rate)
+
+            # keep track of the MSE for reporting later
+            sum_error += self._mse(target, output)
+
+          # Epoch complete, report the training error
+        print("Error: {} at epoch {}".format(sum_error, i+1))
+    def _mse(self,input,target):
+      return np.average((input-target)**2)
+
+
+#create mlp
+from random import random
+mlp=MLP(2,[5],1)
+#create dummy data
+#create a dataset to train a network for the sum operation
+inputs= np.array([[random()/2 for _ in range(2)] for _ in range(1000)])
+targets = np.array([[i[0] + i[1]] for i in inputs])
+
+mlp.train(inputs,targets,50,0.1)
+
+#test data
+inputs=np.array([0.1,0.5])
+targets=np.array([0.4])
+output=mlp.forward_propogate(inputs)
+print("Our newtwork believes {} +{} is {}".format(inputs[0],inputs[1],output[0]))
