@@ -1,5 +1,10 @@
 import numpy as np
-
+#Save activations and derivatives
+#implement backpropogation
+#Implement gredint decent
+#implement train
+#train our net with some dummy data
+#make some prediction
 
 class MLP(object):
 
@@ -22,33 +27,76 @@ class MLP(object):
 
         # create a generic representation of the layers
         layers = [num_inputs] + hidden_layers + [num_outputs]
-        print(layers)
+        #print(layers)
         # create random connection weights for the layers
         weights = []
         for i in range(len(layers)-1):
-            w = np.random.rand(layers[i], layers[i+1])
-            print(w)
+            w = np.random.rand(layers[i], layers[i + 1])
             weights.append(w)
         self.weights = weights
 
+
+        activations=[]
+        for i in range(len(layers)):
+          a=np.zeros(layers[i])
+          activations.append(a)
+
+        self.activations=activations
+
+        derivatives=[]
+        for i in range(len(layers) - 1):
+            d = np.zeros((layers[i], layers[i + 1]))
+            derivatives.append(d)
+        self.derivatives = derivatives
+
     def forward_propogate(self,inputs):
-          activation=inputs
-          
-          for x in self.weights:
-            
-            net_inputs=np.dot(activation,x)
-            
+          # the input layer activation is just the input itself
+          activation = inputs
+
+          # save the activations for backpropogation
+          self.activations[0] = activation
+          for i,w in enumerate(self.weights):
+            net_inputs=np.dot(activation,w)
+            #update
             activation=self.sigmoid(net_inputs)
-
+            # save the activations for backpropogation
+            self.activations[i+1]=activation
           return activation
+    def back_backpropogate(self,error,flag=False):
 
+      """Backpropogates an error signal.
+        Args:
+            error (ndarray): The error to backprop.
+        Returns:
+            error (ndarray): The final error of the input
+        """
+         # iterate backwards through the network layers
+         #dw_i=(a[i+1]-y)*s'(h[i+1])*a[i]
+         #s'(h[i+1])->1/1+np.exp(-h[i+1])=  s(h[i+1])*(i-s(h[i+1]))
+         #s(h[i+1])=a[i+1]
+
+         #dw_[i-1]=(a[i+1]-y)*s'(h[i+1])*w[i]*s'(h[i])*a[i-1]
+      for i in reversed(range(len(self.derivatives))):
+
+        # get activation for previous layer
+        activation=self.activations[i+1]
+        #get the derrivative of activation
+        delta=error * self.sigmoid_derivative(activation)
+  
+        delta_reshaped=delta.reshape(delta.shape[0],-1).T
+        current_derevatives=self.activations[i] #activation is 2d so current is 1d so make current 2d using reshape [1]-->[[1]]
+        current_derevatives_reshaped=current_derevatives.reshape(current_derevatives.shape[0],-1)
+        #cal base derivative
+        self.derivatives[i]=np.dot(current_derevatives_reshaped,delta_reshaped)
+        error=np.dot(delta,self.weights[i].T)
+
+        if(flag):
+          print("Derivative for W{}:{}".format(i,self.derivatives[i]))
+      return error
+
+
+    def sigmoid_derivative(self,x):
+      return x* (1.0 - x)
     def sigmoid(self,x):
           y=1/(1+np.exp(-x))
           return y
-
-
-mlp=MLP()
-inputs=np.random.rand(mlp.num_inputs)
-output=mlp.forward_propogate(inputs)
-print("input for nural network:{}".format(inputs))
-print("output for nural network:{}".format(output))
